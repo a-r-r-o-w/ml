@@ -10,7 +10,7 @@ model = tf.keras.models.Sequential()
 model.add(tf.keras.layers.InputLayer(input_shape = (1,)))
 model.add(tf.keras.layers.Dense(1, activation = 'relu'))
 model.add(tf.keras.layers.Dense(1, activation = 'relu'))
-model.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
+model.compile(optimizer = 'adam', loss = 'mean_squared_error', metrics = ['accuracy'])
 model.fit(training_data, training_data, epochs = 10)
 
 loss, accuracy = model.evaluate(testing_data, testing_data)
