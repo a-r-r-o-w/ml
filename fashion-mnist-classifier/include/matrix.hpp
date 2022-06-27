@@ -28,7 +28,7 @@ namespace fmc {
       vec2d values;
     
     public:
-      matrix (int, int, const T& = T());
+      matrix (int = 0, int = 0, const T& = T());
       matrix (int, int, const vec2d&);
       matrix (const matrix&);
       matrix (matrix&&);
@@ -43,13 +43,20 @@ namespace fmc {
       matrix& operator *= (const matrix&);
       matrix& operator *= (const T&);
       matrix& operator /= (const T&);
+      matrix& operator + ();
+      matrix& operator - ();
 
       template <typename FunctionType>
       matrix& operator () (FunctionType&&);
 
+      vec1d&       operator [] (int);
+      const vec1d& operator [] (int) const;
+
       int      get_rows               () const;
       int      get_cols               () const;
+      const T& get_value              () const;
       T        get_value_copy         (int, int) const;
+      const T& get_values             () const;
       T&       get_value_reference    (int, int);
       vec2d    get_values_copy        () const;
       vec2d&   get_values_reference   ();
@@ -128,7 +135,7 @@ namespace fmc {
   matrix <T>::matrix (matrix <T>&& m)
     : rows (m.rows),
       cols (m.cols),
-      values (std::move(m->values))
+      values (std::move(m.values))
   { }
 
   /**
@@ -182,6 +189,7 @@ namespace fmc {
     for (int i = 0; i < rows; ++i)
       for (int j = 0; j < cols; ++j)
         values[i][j] += rhs.values[i][j];
+    return *this;
   }
 
   /**
@@ -196,6 +204,7 @@ namespace fmc {
     for (int i = 0; i < rows; ++i)
       for (int j = 0; j < cols; ++j)
         values[i][j] += value;
+    return *this;
   }
 
   /**
@@ -215,6 +224,7 @@ namespace fmc {
     for (int i = 0; i < rows; ++i)
       for (int j = 0; j < cols; ++j)
         values[i][j] -= rhs.values[i][j];
+    return *this;
   }
 
   /**
@@ -229,6 +239,7 @@ namespace fmc {
     for (int i = 0; i < rows; ++i)
       for (int j = 0; j < cols; ++j)
         values[i][j] -= value;
+    return *this;
   }
 
   /**
@@ -296,6 +307,19 @@ namespace fmc {
     return *this;
   }
 
+  template <typename T>
+  matrix <T>& matrix <T>::operator + () {
+    return *this;
+  }
+
+  template <typename T>
+  matrix <T>& matrix <T>::operator - () {
+    for (int i = 0; i < rows; ++i)
+      for (int j = 0; j < cols; ++j)
+        values[i][j] = -values[i][j];
+    return *this;
+  }
+
   /**
    * @brief Operator () overload to apply a function to all elements of the matrix
    * 
@@ -311,6 +335,38 @@ namespace fmc {
       for (int j = 0; j < cols; ++j)
         values[i][j] = apply_function(values[i][j]);
     return *this;
+  }
+
+  /**
+   * @brief Operator [] overload to access matrix <T>::matrix rows directly
+   * 
+   * @tparam T type of the elements that the matrix holds
+   * @param index row index that is to be accessed
+   * @return matrix <T>::vec1d& reference to matrix row
+   */
+  template <typename T>
+  typename matrix <T>::vec1d& matrix <T>::operator [] (int index) {
+#ifdef DEBUG_MODE
+    if (index < 0 or index >= rows)
+      throw std::runtime_error("out of bounds access will occur with the provided index");
+#endif
+    return values[index];
+  }
+
+  /**
+   * @brief Operator [] overload to access matrix <T>::matrix rows directly
+   * 
+   * @tparam T type of the elements that the matrix holds
+   * @param index row index that is to be accessed
+   * @return matrix <T>::vec1d& const reference to matrix row
+   */
+  template <typename T>
+  const typename matrix <T>::vec1d& matrix <T>::operator [] (int index) const {
+#ifdef DEBUG_MODE
+    if (index < 0 or index >= rows)
+      throw std::runtime_error("out of bounds access will occur with the provided index");
+#endif
+    return values[index];
   }
 
   /**
@@ -453,8 +509,13 @@ namespace fmc {
   template <typename T>
   std::ostream& operator << (std::ostream& stream, const matrix <T>& m) {
     for (int i = 0; i < m.rows; ++i) {
-      for (int j = 0; j < m.cols; ++j)
-        stream << m.values[i][j] << " \n"[j == m.cols - 1];
+      for (int j = 0; j < m.cols; ++j) {
+        stream << m.values[i][j];
+        if (j != m.cols - 1)
+          stream << ' ';
+      }
+      if (i != m.rows - 1)
+        stream << '\n';
     }
     return stream;
   }
