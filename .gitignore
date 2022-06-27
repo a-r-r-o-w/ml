@@ -1,5 +1,18 @@
-# CMake
-CMakeFiles/
+# python directories
+.venv/
+__pycache__/
+*.model
 
-# binaries
+# vscode
+.vscode/
+
+# build
 build/
+*.out
+*.s
+
+# environment files
+.env
+
+# datasets
+*.csv
