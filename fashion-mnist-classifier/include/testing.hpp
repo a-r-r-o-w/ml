@@ -1,5 +1,7 @@
-#ifndef HDC_TEST_H
-#define HDC_TEST_H
+// Arrow
+
+#ifndef FMC_TESTING_HPP
+#define FMC_TESTING_HPP
 
 #include <iostream>
 #include <string_view>
@@ -32,4 +34,4 @@ void test_stats () {
   std::cout << "Testing complete! Passed " << success_count << " of " << test_count << " tests\n";
 }
 
-#endif // HDC_TEST_H
+#endif // FMC_TESTING_HPP
