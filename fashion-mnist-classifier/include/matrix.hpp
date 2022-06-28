@@ -21,6 +21,8 @@ namespace fmc {
     public:
       using vec1d = std::vector <T>;
       using vec2d = std::vector <vec1d>;
+      using ApplyFuncConstParameter = T (*) (const T&);
+      using ApplyFuncNonConstParameter = T (*) (T);
     
     private:
       int rows;
@@ -46,8 +48,8 @@ namespace fmc {
       matrix& operator + ();
       matrix& operator - ();
 
-      template <typename FunctionType>
-      matrix& operator () (FunctionType&&);
+      matrix& operator () (ApplyFuncConstParameter);
+      matrix& operator () (ApplyFuncNonConstParameter);
 
       vec1d&       operator [] (int);
       const vec1d& operator [] (int) const;
@@ -325,12 +327,27 @@ namespace fmc {
    * 
    * @tparam T type of the elements that the matrix holds
    * @tparam FunctionType type of the function that is to be applied
+   * @param apply_function a function that accepts a parameter of type const T& and returns a value of type T
+   * @return matrix <T>& reference to self (`this`)
+   */
+  template <typename T>
+  matrix <T>& matrix <T>::operator () (ApplyFuncConstParameter apply_function) {
+    for (int i = 0; i < rows; ++i)
+      for (int j = 0; j < cols; ++j)
+        values[i][j] = apply_function(values[i][j]);
+    return *this;
+  }
+
+  /**
+   * @brief Operator () overload to apply a function to all elements of the matrix
+   * 
+   * @tparam T type of the elements that the matrix holds
+   * @tparam FunctionType type of the function that is to be applied
    * @param apply_function a function that accepts a parameter of type T and returns a value of type T
    * @return matrix <T>& reference to self (`this`)
    */
   template <typename T>
-  template <typename FunctionType>
-  matrix <T>& matrix <T>::operator () (FunctionType&& apply_function) {
+  matrix <T>& matrix <T>::operator () (ApplyFuncNonConstParameter apply_function) {
     for (int i = 0; i < rows; ++i)
       for (int j = 0; j < cols; ++j)
         values[i][j] = apply_function(values[i][j]);
