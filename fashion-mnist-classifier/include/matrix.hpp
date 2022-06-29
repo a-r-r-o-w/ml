@@ -64,6 +64,12 @@ namespace fmc {
       vec2d&   get_values_reference   ();
       void     set_value              (int, int, const T&);
 
+      matrix add       (const matrix&) const;
+      matrix dot       (const matrix&) const;
+      matrix scale     (const T&) const;
+      matrix subtract  (const matrix&) const;
+      matrix transpose () const;
+
       template <typename E>
       friend bool operator == (const matrix <E>&, const matrix <E>&);
       
@@ -309,11 +315,24 @@ namespace fmc {
     return *this;
   }
 
+  /**
+   * @brief Does nothing to values of the matrix. Similar to multiplying by 1.
+   * 
+   * @tparam T type of the elements that the matrix holds
+   * @return matrix <T>& reference to self (`this`)
+   */
   template <typename T>
   matrix <T>& matrix <T>::operator + () {
     return *this;
   }
 
+  /**
+   * @brief Negates all values of the matrix i.e. positive values become negative and negative values become
+   *        positive. Similar to multiplying by -1.
+   * 
+   * @tparam T type of the elements that the matrix holds
+   * @return matrix <T>& reference to self (`this`)
+   */
   template <typename T>
   matrix <T>& matrix <T>::operator - () {
     for (int i = 0; i < rows; ++i)
@@ -484,6 +503,69 @@ namespace fmc {
       throw std::runtime_error("out of bounds access will occur with the provided row and col values");
 #endif
     values[i][j] = value;
+  }
+
+  /**
+   * @brief Add two matrices
+   * 
+   * @tparam T type of the elements that the matrix holds
+   * @param m matrix to be added to `this`
+   * @return matrix <T> sum of the two matrices
+   */
+  template <typename T>
+  matrix <T> matrix <T>::add (const matrix <T>& m) const {
+    return *this + m;
+  }
+
+  /**
+   * @brief Dot product of two matrices
+   * 
+   * @tparam T type of the elements that the matrix holds
+   * @param m matrix to be multiplied to `this`
+   * @return matrix <T> dot product of the two matrices
+   */
+  template <typename T>
+  matrix <T> matrix <T>::dot (const matrix <T>& m) const {
+    return *this * m;
+  }
+
+  /**
+   * @brief Subtract two matrices
+   * 
+   * @tparam T type of the elements that the matrix holds
+   * @param m matrix to be subtracted from `this`
+   * @return matrix <T> difference of the two matrices
+   */
+  template <typename T>
+  matrix <T> matrix <T>::subtract (const matrix <T>& m) const {
+    return *this - m;
+  }
+
+  /**
+   * @brief Scale all values of a matrix by some scaling_factor
+   * 
+   * @tparam T type of the elements that the matrix holds
+   * @param scaling_factor factor to be scale the matrix by
+   * @return matrix <T> scaled matrix
+   */
+  template <typename T>
+  matrix <T> matrix <T>::scale (const T& scaling_factor) const {
+    return *this * scaling_factor;
+  }
+
+  /**
+   * @brief Transpose of a matrix
+   * 
+   * @tparam T type of the elements that the matrix holds
+   * @return matrix <T> transposed matrix
+   */
+  template <typename T>
+  matrix <T> matrix <T>::transpose () const {
+    matrix <T> t (cols, rows);
+    for (int i = 0; i < rows; ++i)
+      for (int j = 0; j < cols; ++j)
+        t[j][i] = values[i][j];
+    return t;
   }
 
   /**
