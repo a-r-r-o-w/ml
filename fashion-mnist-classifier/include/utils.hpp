@@ -11,6 +11,8 @@
 namespace fmc {
 
   namespace random {
+    static std::random_device rd;
+    static std::mt19937 generator (rd());
     
     /**
      * @brief returns a random integer in range [x, y]
@@ -22,9 +24,7 @@ namespace fmc {
      */
     template <typename T>
     T random (const T& x, const T& y) requires std::integral <T> {
-      static std::random_device rd;
-      static std::mt19937 generator (rd());
-      static std::uniform_int_distribution <T> distribution (x, y);
+      std::uniform_int_distribution <T> distribution (x, y);
       return distribution(generator);
     }
 
@@ -38,9 +38,7 @@ namespace fmc {
      */
     template <typename T>
     T random (const T& x, const T& y) requires std::floating_point <T> {
-      static std::random_device rd;
-      static std::mt19937 generator (rd());
-      static std::uniform_real_distribution <T> distribution (x, y);
+      std::uniform_real_distribution <T> distribution (x, y);
       return distribution(generator);
     }
 
