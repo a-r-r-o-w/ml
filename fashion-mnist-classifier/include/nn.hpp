@@ -80,8 +80,8 @@ namespace fmc {
       void     backward_propagate ();
       void     calculate_delta    ();
       void     calculate_loss     (int);
-      void     compile            ();
-      void     fit                (const std::vector <matrix <T>>&, const std::vector <int>&);
+      network& compile            ();
+      network& fit                (const std::vector <matrix <T>>&, const std::vector <int>&);
       void     forward_propagate  (const matrix <T>&);
       void     join_layers        ();
       void     randomize          ();
@@ -247,13 +247,14 @@ namespace fmc {
   }
 
   template <typename T>
-  void network <T>::compile () {
+  network <T>& network <T>::compile () {
     join_layers();
     randomize();
+    return *this;
   }
 
   template <typename T>
-  void network <T>::fit (const std::vector <matrix <T>>& data, const std::vector <int>& labels) {
+  network <T>& network <T>::fit (const std::vector <matrix <T>>& data, const std::vector <int>& labels) {
 #ifdef DEBUG_MODE
     if (data.size() != labels.size())
       throw std::runtime_error("data and labels must have same size");
@@ -265,6 +266,8 @@ namespace fmc {
       calculate_delta();
       backward_propagate();
     }
+
+    return *this;
   }
 
   template <typename T>
