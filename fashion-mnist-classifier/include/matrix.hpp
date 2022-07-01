@@ -56,7 +56,7 @@ namespace fmc {
 
       int      get_rows               () const;
       int      get_cols               () const;
-      const T& get_value              () const;
+      const T& get_value              (int, int) const;
       T        get_value_copy         (int, int) const;
       const T& get_values             () const;
       T&       get_value_reference    (int, int);
@@ -424,6 +424,23 @@ namespace fmc {
   template <typename T>
   int matrix <T>::get_cols () const
   { return cols; }
+
+  /**
+   * @brief Getter function to return a matrix <T>::matrix element by const reference
+   * 
+   * @tparam T type of the elements that the matrix holds
+   * @param i row (0-based indexing)
+   * @param j column (0-based indexing)
+   * @return const T& const reference to matrix <T>::matrix element at row `i` and col `j`
+   */
+  template <typename T>
+  const T& matrix <T>::get_value (int i, int j) const {
+#ifdef DEBUG_MODE
+    if (i < 0 or i >= rows or j < 0 or j >= cols)
+      throw std::runtime_error("out of bounds access will occur with the provided row and col values");
+#endif
+    return values[i][j];    
+  }
 
   /**
    * @brief Getter function to return a matrix <T>::matrix element by copy
