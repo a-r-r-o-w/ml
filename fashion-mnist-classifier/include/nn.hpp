@@ -4,6 +4,8 @@
 #define FMC_NN_HPP
 
 #include <algorithm>
+#include <fstream>
+#include <iomanip>
 #include <iosfwd>
 #include <vector>
 
@@ -20,7 +22,7 @@ namespace fmc {
     public:
       using ActivationFunc = T (*) (const T&);
 
-    private:
+    public:
       int neuron_count;
       matrix <T> z;
       matrix <T> activation;
@@ -81,10 +83,12 @@ namespace fmc {
       void     calculate_delta    ();
       void     calculate_loss     (int);
       network& compile            ();
-      network& fit                (const std::vector <matrix <T>>&, const std::vector <int>&);
+      network& fit                (const std::vector <matrix <T>>&, const std::vector <int>&, int);
       void     forward_propagate  (const matrix <T>&);
       void     join_layers        ();
+      network& load               (const std::string&);
       void     randomize          ();
+      network& save               (const std::string&);
   };
 
   template <typename T>
@@ -127,8 +131,8 @@ namespace fmc {
 
   template <typename T>
   void layer <T>::backward_propagate (layer <T>& layer, const T& learning_rate) {
-    weight = -layer.activation.transpose() * delta * learning_rate;
-    bias = -delta * learning_rate;
+    weight -= layer.activation.transpose() * delta * learning_rate;
+    bias -= delta * learning_rate;
   }
 
   template <typename T>
@@ -154,8 +158,8 @@ namespace fmc {
   
   template <typename T>
   void layer <T>::randomize () {
-    bias([] ([[maybe_unused]] const T& _) { return random::random <T> (0, 1); });
-    weight([] ([[maybe_unused]] const T& _) { return random::random <T> (0, 1); });
+    bias([] ([[maybe_unused]] const T& _) { return random::random <T> (-1, 1); });
+    weight([] ([[maybe_unused]] const T& _) { return random::random <T> (-1, 1); });
   }
 
   template <typename T>
@@ -165,6 +169,15 @@ namespace fmc {
       throw std::runtime_error("incompatible matrix for activation assignment");
 #endif
     activation = activation_;
+  }
+
+  template <typename T>
+  void layer <T>::set_delta (const matrix <T>& delta_) {
+#ifdef DEBUG_MODE
+    if (delta.get_rows() != delta_.get_rows() or delta.get_cols() != delta_.get_cols())
+      throw std::runtime_error("incompatible matrix for activation assignment");
+#endif
+    delta = delta_;
   }
 
   template <typename T>
@@ -236,13 +249,14 @@ namespace fmc {
     for (int i = 0; i < output_neuron_count; ++i) {
       T error = loss_function(predictions[0][i], expected[i]);
       
-      T activation_z_derivative    = layers.back().activation_function_derivative(z[0][i]);
-      T cost_activation_derivative = loss_function_derivative(predictions[0][i], expected[i]);
+      T activation_z_derivative    = layers.back().activation_function_derivative(z.get_value(0, i));
+      T cost_activation_derivative = loss_function_derivative(predictions.get_value(0, i), expected[i]);
       
       cost += error;
-      new_delta[0][i] = activation_z_derivative * cost_activation_derivative;
+      new_delta.set_value(0, i, activation_z_derivative * cost_activation_derivative);
     }
 
+    layers.back().set_delta(new_delta);
     cost /= output_neuron_count;
   }
 
@@ -254,17 +268,23 @@ namespace fmc {
   }
 
   template <typename T>
-  network <T>& network <T>::fit (const std::vector <matrix <T>>& data, const std::vector <int>& labels) {
+  network <T>& network <T>::fit (const std::vector <matrix <T>>& data, const std::vector <int>& labels, int epochs) {
 #ifdef DEBUG_MODE
     if (data.size() != labels.size())
       throw std::runtime_error("data and labels must have same size");
 #endif
 
-    for (int i = 0; i < (int)data.size(); ++i) {
-      forward_propagate(data[i]);
-      calculate_loss(labels[i]);
-      calculate_delta();
-      backward_propagate();
+    std::cout << "[*] Training model\n";
+
+    for (int epoch = 0; epoch < epochs; ++epoch) {
+      std::cout << "[*] Epoch: " << epoch + 1 << std::endl;
+
+      for (int i = 0; i < (int)data.size(); ++i) {
+        forward_propagate(data[i]);
+        calculate_loss(labels[i]);
+        calculate_delta();
+        backward_propagate();
+      }
     }
 
     return *this;
@@ -287,8 +307,55 @@ namespace fmc {
   }
 
   template <typename T>
+  network <T>& network <T>::load (const std::string& filepath) {
+    std::cout << "[*] Loading neural model from \"" << filepath << "\"\n";
+
+    std::ifstream file (filepath);
+    std::string header;
+    char newline;
+
+    if (!file.is_open())
+      throw std::runtime_error("unable to load model from provided file path");
+    
+    for (int i = 1; i < layer_count; ++i) {
+      std::getline(file, header);
+      std::cout << "[*] Reading " << header << '\n';
+      file >> layers[i].bias;
+      file.get(newline);
+
+      std::getline(file, header);
+      std::cout << "[*] Reading " << header << '\n';
+      file >> layers[i].weight;
+      file.get(newline);
+    }
+
+    file.close();
+
+    return *this;
+  }
+
+  template <typename T>
   void network <T>::randomize () {
     std::for_each(layers.begin(), layers.end(), [] (layer <T>& layer) { layer.randomize(); });
+  }
+
+  template <typename T>
+  network <T>& network <T>::save (const std::string& filepath) {
+    std::cout << "[*] Saving neural network model to \"" << filepath << "\"\n";
+
+    std::ofstream file (filepath);
+    file << std::fixed << std::setprecision(20);
+
+    for (int i = 1; i < layer_count; ++i) {
+      file << "[layer " << i << " bias]\n";
+      file << layers[i].get_bias() << '\n';
+      file << "[layer " << i << " weight]\n";
+      file << layers[i].get_weight() << '\n';
+    }
+
+    file.close();
+
+    return *this;
   }
 
 } // namespace fmc
