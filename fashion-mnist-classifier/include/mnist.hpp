@@ -16,6 +16,7 @@ namespace fmc {
   class mnist {
     static const int mnist_row_size = 28;
     static const int mnist_col_size = 28;
+    static const int mnist_img_size = 28 * 28;
 
     public:
       int training_size;
@@ -43,8 +44,8 @@ namespace fmc {
   mnist::mnist (int training_size, int testing_size)
     : training_size (training_size),
       testing_size (testing_size) {
-    training_dataset.resize(training_size, fmc::matrix <long double> (mnist_row_size, mnist_col_size));
-    testing_dataset.resize(testing_size, fmc::matrix <long double> (mnist_row_size, mnist_col_size));
+    training_dataset.resize(training_size, fmc::matrix <long double> (1, mnist_img_size));
+    testing_dataset.resize(testing_size, fmc::matrix <long double> (1, mnist_img_size));
     training_labels.resize(training_size);
     testing_labels.resize(testing_size);
   }
@@ -85,9 +86,10 @@ namespace fmc {
   }
 
   mnist& mnist::load (std::string training_filepath, std::string testing_filepath) {
-    int value;
-    int row, col;
+    int value, index;
     std::string line, pixel, label;
+
+    std::cout << "[*] Initialising MNIST dataset\n";
 
     {
       std::ifstream training_file (training_filepath);
@@ -99,7 +101,7 @@ namespace fmc {
       
       for (int i = 0; i < training_size and training_file.is_open(); ++i) {
         std::getline(training_file, line);
-        row = 0, col = 0;
+        index = 0;
 
         std::stringstream linestream (line);
 
@@ -108,14 +110,14 @@ namespace fmc {
 
         while (std::getline(linestream, pixel, ',')) {
           value = std::stoi(pixel);
-          training_dataset[i].set_value(row, col, value);
-          ++col;
-          if (col == mnist_col_size)
-            ++row, col = 0;
+          training_dataset[i].set_value(0, index, value);
+          ++index;
         }
       }
 
       training_file.close();
+      
+      std::cout << "[*] MNIST training dataset initialised\n";
     }
 
     {
@@ -128,7 +130,7 @@ namespace fmc {
       
       for (int i = 0; i < testing_size and testing_file.is_open(); ++i) {
         std::getline(testing_file, line);
-        row = 0, col = 0;
+        index = 0;
 
         std::stringstream linestream (line);
 
@@ -137,14 +139,14 @@ namespace fmc {
 
         while (std::getline(linestream, pixel, ',')) {
           value = std::stoi(pixel);
-          testing_dataset[i].set_value(row, col, value);
-          ++col;
-          if (col == mnist_col_size)
-            ++row, col = 0;
+          testing_dataset[i].set_value(0, index, value);
+          ++index;
         }
       }
 
       testing_file.close();
+
+      std::cout << "[*] MNIST testing dataset initialised\n";
     }
 
     return *this;
@@ -154,17 +156,17 @@ namespace fmc {
     const long double factor = (long double)1.0 / 255.0;
 
     for (int i = 0; i < training_size; ++i)
-      training_dataset[i].scale(factor);
+      training_dataset[i] *= factor;
     for (int i = 0; i < testing_size; ++i)
-      testing_dataset[i].scale(factor);
+      testing_dataset[i] *= factor;
     
     return *this;
   }
 
   void mnist::display (const fmc::matrix <long double>& data) const {
-    for (int i = 0; i < data.get_rows(); ++i) {
-      for (int j = 0; j < data.get_cols(); ++j) {
-        int value = data[i][j];
+    for (int i = 0; i < mnist_row_size; ++i) {
+      for (int j = 0; j < mnist_col_size; ++j) {
+        int value = data.get_value(0, i * mnist_col_size + j);
         std::cout << "\x1b[48;2;" << value << ';' << value << ';' << value << "m  \x1b[0m";
       }
       std::cout << '\n';
