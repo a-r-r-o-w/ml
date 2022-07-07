@@ -83,10 +83,12 @@ namespace fmc {
       void     calculate_delta    ();
       void     calculate_loss     (int);
       network& compile            ();
+      network& evaluate           (const std::vector <matrix <T>>&, const std::vector <int>&);
       network& fit                (const std::vector <matrix <T>>&, const std::vector <int>&, int);
       void     forward_propagate  (const matrix <T>&);
       void     join_layers        ();
       network& load               (const std::string&);
+      int      predict            (const matrix <T>&);
       void     randomize          ();
       network& save               (const std::string&);
   };
@@ -268,16 +270,40 @@ namespace fmc {
   }
 
   template <typename T>
+  network <T>& network <T>::evaluate (const std::vector <matrix <T>>& data, const std::vector <int>& labels) {
+#ifdef DEBUG_MODE
+    if (data.size() != labels.size())
+      throw std::runtime_error("data and labels must have same size");
+#endif
+
+    std::cout << "[*] Testing model" << std::endl;
+
+    int correct_count = 0;
+    int total_count = data.size();
+
+    for (int i = 0; i < total_count; ++i) {
+      if (predict(data[i]) == labels[i])
+        ++correct_count;
+    }
+
+    long double accuracy = (long double)correct_count * 100 / (long double)total_count;
+    
+    std::cout << "Accuracy: " << std::fixed << accuracy << '%' << std::endl;
+
+    return *this;
+  }
+
+  template <typename T>
   network <T>& network <T>::fit (const std::vector <matrix <T>>& data, const std::vector <int>& labels, int epochs) {
 #ifdef DEBUG_MODE
     if (data.size() != labels.size())
       throw std::runtime_error("data and labels must have same size");
 #endif
 
-    std::cout << "[*] Training model\n";
+    std::cout << "[*] Training model" << std::endl;
 
     for (int epoch = 0; epoch < epochs; ++epoch) {
-      std::cout << "[*] Epoch: " << epoch + 1 << std::endl;
+      std::cout << "[*] Epoch: " << epoch + 1 << '/' << epochs << std::endl;
 
       for (int i = 0; i < (int)data.size(); ++i) {
         forward_propagate(data[i]);
@@ -308,7 +334,7 @@ namespace fmc {
 
   template <typename T>
   network <T>& network <T>::load (const std::string& filepath) {
-    std::cout << "[*] Loading neural model from \"" << filepath << "\"\n";
+    std::cout << "[*] Loading neural model from \"" << filepath << "\"" << std::endl;
 
     std::ifstream file (filepath);
     std::string header;
@@ -319,12 +345,12 @@ namespace fmc {
     
     for (int i = 1; i < layer_count; ++i) {
       std::getline(file, header);
-      std::cout << "[*] Reading " << header << '\n';
+      std::cout << "[*] Reading " << header << std::endl;
       file >> layers[i].bias;
       file.get(newline);
 
       std::getline(file, header);
-      std::cout << "[*] Reading " << header << '\n';
+      std::cout << "[*] Reading " << header << std::endl;
       file >> layers[i].weight;
       file.get(newline);
     }
@@ -335,13 +361,28 @@ namespace fmc {
   }
 
   template <typename T>
+  int network <T>::predict (const matrix <T>& data) {
+    forward_propagate(data);
+
+    const matrix <T>& predictions = layers.back().get_activation();
+    int neuron_count = layers.back().get_neuron_count();
+    int max_index = 0;
+
+    for (int i = 0; i < neuron_count; ++i)
+      if (predictions.get_value(0, i) > predictions.get_value(0, max_index))
+        max_index = i;
+    
+    return max_index;
+  }
+
+  template <typename T>
   void network <T>::randomize () {
     std::for_each(layers.begin(), layers.end(), [] (layer <T>& layer) { layer.randomize(); });
   }
 
   template <typename T>
   network <T>& network <T>::save (const std::string& filepath) {
-    std::cout << "[*] Saving neural network model to \"" << filepath << "\"\n";
+    std::cout << "[*] Saving neural network model to \"" << filepath << "\"" << std::endl;
 
     std::ofstream file (filepath);
     file << std::fixed << std::setprecision(20);
