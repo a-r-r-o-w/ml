@@ -1,6 +1,7 @@
 # python directories
 .venv/
 __pycache__/
+.ipynb_checkpoints/
 *.model
 
 # vscode
@@ -10,6 +11,9 @@ __pycache__/
 build/
 *.out
 *.s
+
+# tensorflow
+training_checkpoints/
 
 # environment files
 .env
