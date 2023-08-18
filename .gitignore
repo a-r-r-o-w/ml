@@ -23,3 +23,7 @@ test/
 
 # datasets
 *.csv
+data/
+
+# media files
+*.mp4
