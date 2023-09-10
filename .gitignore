@@ -18,6 +18,9 @@ training_checkpoints/
 # local test files
 test/
 
+# kaggle files
+kaggle/
+
 # environment files
 .env
 
